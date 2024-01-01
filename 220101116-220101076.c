@@ -25,8 +25,13 @@ typedef struct Course {
     int kapasite;
     int enrolled;
     char teacher[50];
+<<<<<<< Updated upstream
     Student* students; // öğrencilerin listesi
     Teacher* teachers; // öğretmenlerin listesi
+=======
+    Student* students; // öğrencilerin listesi "düzenleyip hallettik"
+    Teacher* teachers; // öğretmenlerin listesi "++"
+>>>>>>> Stashed changes
     struct Course* next;
 } Course;
 
