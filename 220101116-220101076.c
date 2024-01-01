@@ -25,8 +25,8 @@ typedef struct Course {
     int kapasite;
     int enrolled;
     char teacher[50];
-    Student* students; // öğrencilerin listesi "--"
-    Teacher* teachers; // öğretmenlerin listes "++"
+    Student* students; // öğrencilerin listesi
+    Teacher* teachers; // öğretmenlerin listesi
     struct Course* next;
 } Course;
 
@@ -35,7 +35,7 @@ void getUserInput(char* prompt, char* userInput, int maxLength) {
     printf("%s", prompt);
     fgets(userInput, maxLength, stdin);
 
-    // remove the trailing newline character
+    //yeni satır karakterini kaldırır
     size_t length = strlen(userInput);
     if (length > 0 && userInput[length - 1] == '\n') {
         userInput[length - 1] = '\0';
@@ -44,29 +44,38 @@ void getUserInput(char* prompt, char* userInput, int maxLength) {
 
 // input integer
 int getUserInputInt(char* prompt) {
+    int value;
     char userInput[50];
-    getUserInput(prompt, userInput, sizeof(userInput));
 
-    // string -> integer
-    return atoi(userInput);
+    while (1) { // kurs kapasitesi belirlenirken sayı yerine harf girilmesi durumunda ERROR
+        getUserInput(prompt, userInput, sizeof(userInput));
+        if (sscanf(userInput, "%d", &value) == 1) {
+            return value;
+        } else {
+            printf("Lutfen duzgun bir kapasite giriniz.Kapasite sayi ile ifade edilmelidir.\n");
+        }
+    }
 }
+
 
 // öğrenciyi kursa enrollamak/atamak
 void addStudentToCourse(Course* course, Student* student) {
     if (course->enrolled < course->kapasite) {
+        student->studentID = course->enrolled + 1; // öğrenci kimlikleri randomize değil sıralı olarak verilir ( ilk öğrenci 1 numaralı ikinci öğrenci 2 numaralı vs. )
         student->next = course->students;
         course->students = student;
         course->enrolled++;
-        printf("Öğrenci %s (ID: %d) şu kursa atanmıştır :  %s\n", student->name, student->studentID, course->name);
+        printf("Ogrenci %s (ID: %d) su kursa atanmistir :  %s\n", student->name, student->studentID, course->name);
     } else {
-        printf("ERROR:Bu kursun kontejyanı doludur.\n"); //Kursun dolması halinde verilecek error - kurs kontejyanından fazla öğrenci eklenmeye çalışırsa
+        printf("ERROR: Bu kursun kontejyani doludur.\n");
         free(student);
     }
 }
 
-// kursa öğretmen enrollamak
+
+// kursa yardımcı öğretmen enrollamak/atamak
 void addTeacherToCourse(Course* course, Teacher* teacher) {
-    // ikiden fazla öğretmen atanmasını istemediğimizden ötürü  öğretmen sayısı kontrol "--"
+    // Kontrol eder++
     int teacherCount = 0;
     Teacher* currentTeacher = course->teachers;
     while (currentTeacher != NULL) {
@@ -74,18 +83,28 @@ void addTeacherToCourse(Course* course, Teacher* teacher) {
         currentTeacher = currentTeacher->next;
     }
 
-    if (teacherCount < 2) {
+    if (teacherCount < 2) { //yardımcı öğretmen sayısının 2 den fazla olmaması durumunda
         teacher->next = course->teachers;
         course->teachers = teacher;
-        printf("Öğretmen %s şu kursa atanmıştır :  %s\n", teacher->name, course->name);
+        printf("Yardimci ogretmen %s, kursuna atanmistir: %s\n", teacher->name, course->name);
     } else {
-        printf("Error: Her kursta sadece 2 tane öğretmen olabilir.\n");
+        printf("Error: Her kursta sadece 2 tane yardimci ogretmen olabilir.\n"); //yardımcı öğretmen sayısının 2 fazla olması durumunda
         free(teacher);
     }
 }
 
-// listeye yeni bir kurs ekleme
 Course* addCourse(Course* head, const char* name, int kapasite, const char* teacher) {
+    //aynı isimli kurs açmak istendiğinde kursun var olduğunu gösteren error
+    Course* currentCourse = head;
+    while (currentCourse != NULL) {
+        if (strcmp(currentCourse->name, name) == 0) {
+            printf("ERROR:'%s'isminde bir kurs zaten mevcuttur.\n", name);
+            return head;  // listeyi değiştirmediğimiz head'e return
+        }
+        currentCourse = currentCourse->next;
+    }
+
+    // yeni bir kurs eklemek/listede göstermek
     Course* newCourse = (Course*)malloc(sizeof(Course));
     strcpy(newCourse->name, name);
     newCourse->kapasite = kapasite;
@@ -94,21 +113,42 @@ Course* addCourse(Course* head, const char* name, int kapasite, const char* teac
     newCourse->students = NULL;
     newCourse->teachers = NULL;
     newCourse->next = head;
+
+    printf("'%s' isimli kurs listeye eklenmistir !\n", name);
+
     return newCourse;
 }
 
+
 // listeyi göstermek ( tüm kursları )
 void displayCourses(Course* head) {
-    printf("\n:\n");
+    printf("\nKurslar:\n");
     Course* current = head;
     while (current != NULL) {
-        printf("%s (Kapasite: %d, Atanan Öğrenci Sayısı: %d, Öğretmen(ler): %s", current->name, current->kapasite, current->enrolled, current->teacher);
+        printf("%s (Kapasite: %d, Kursu Alan Ogrenci Sayisi: %d, Sorumlu Bas Ogretmen: %s", current->name, current->kapasite, current->enrolled, current->teacher);
 
-        // kurslardaki öğretmenleri gösterir
-        Teacher* currentTeacher = current->teachers;
-        while (currentTeacher != NULL) {
-            printf(", %s", currentTeacher->name);
-            currentTeacher = currentTeacher->next;
+        // Atanmış öğrencileri gösterir
+        printf(", Ogrenci Listesi: ");
+        if (current->students == NULL) {
+            printf("Suanda bu kursda ogrenci bulunmamaktadir."); //öğrenci enrollanmama durumunda
+        } else {
+            Student* currentStudent = current->students;
+            while (currentStudent != NULL) {
+                printf("%s (%d), ", currentStudent->name, currentStudent->studentID);
+                currentStudent = currentStudent->next;
+            }
+        }
+
+        // Dersin/kursun yardımcı öğretmenlerini gösterir
+        printf(", Sorumlu Yardimci Ogretmenlerin Listesi: ");
+        if (current->teachers == NULL) {
+            printf("Henuz bu kursa Sorumlu Yardimci Ogretmen atanmamistir."); //yardımcı öğretmen enrollanmama durumunda
+        } else {
+            Teacher* currentTeacher = current->teachers;
+            while (currentTeacher != NULL) {
+                printf("%s, ", currentTeacher->name);
+                currentTeacher = currentTeacher->next;
+            }
         }
 
         printf(")\n");
@@ -116,44 +156,63 @@ void displayCourses(Course* head) {
     }
 }
 
+
+
+
+
 int main() {
     Course* courseList = NULL; // kursları depolama
 
     // menü
     int choice;
     do {
-        printf("\nMenü:\n");
+        printf("\nMenu:\n");
         printf("1. Kurs Ekle\n");
-        printf("2. Kursa Öğrenci Ekle\n");
-        printf("3. Kursa Öğretmen Ekle\n");
-        printf("4. Kurs Listesini Göster\n");
-        printf("0. Çıkış\n");
+        printf("2. Kursa Ogrenci Ekle\n");
+        printf("3. Kursa Yardimci Ogretmen Ekle\n");
+        printf("4. Kurs Listesini Goster\n");
+        printf("0. Cikis Yap\n");
 
-        choice = getUserInputInt("Yapmak istediğinizin numarasını giriniz: ");
+        choice = getUserInputInt("Uygulamak istediginiz secenegin numarasini giriniz: ");
 
         switch (choice) {
-            case 1: {
-                char name[50];
-                getUserInput("Kurs ismi giriniz: ", name, sizeof(name));
-                int kapasite = getUserInputInt("Kursun kaç kişilik olduğunu giriniz: ");
-                char teacher[50];
-                getUserInput("Kursun öğretmeninin ismini giriniz: ", teacher, sizeof(teacher));
+           case 1: {
+    char name[50];
+    getUserInput("Kurs ismi giriniz: ", name, sizeof(name));
 
-                courseList = addCourse(courseList, name, kapasite, teacher);
-                printf("Kursunuz listeye eklenmiştir!\n");
-                break;
-            }
+    // aynı isimli kursun mevcut olup olmadığına bak
+    Course* currentCourse = courseList;
+    while (currentCourse != NULL) {
+        if (strcmp(currentCourse->name, name) == 0) {
+            printf("ERROR:'%s'isminde bir kurs zaten mevcuttur.\n", name);
+            break;  // kursun mevcut olması durumunda loopdan çıkar
+        }
+        currentCourse = currentCourse->next;
+    }
+
+    // kursun mevcut olmaması durumunda loop'a devam eder
+    if (currentCourse == NULL) {
+        int kapasite = getUserInputInt("Kursun kac kisilik oldugunu giriniz: ");
+        char teacher[50];
+        getUserInput("Kursun Sorumlu Bas Ogretmeninin ismini giriniz: ", teacher, sizeof(teacher));
+
+        courseList = addCourse(courseList, name, kapasite, teacher);
+        printf("Kursunuz listeye eklenmistir!\n");
+    }
+
+    break;
+}
+
             case 2: {
                 char courseName[50];
                 getUserInput("Kurs ismi giriniz: ", courseName, sizeof(courseName));
 
-                // kursun var olup olmadığını kontrol et "--" aynı isimli kursları kontrol edemiyor ve yeniden ekliyor
+                // kursun var olup olmadığını kontrol et "++" fixlendi
                 Course* currentCourse = courseList;
                 while (currentCourse != NULL) {
                     if (strcmp(currentCourse->name, courseName) == 0) {
                         Student* newStudent = (Student*)malloc(sizeof(Student));
-                        getUserInput("Öğrenci ismi giriniz: ", newStudent->name, sizeof(newStudent->name));
-                        newStudent->studentID = rand() % 1000; // student id'yi random generate eder
+                        getUserInput("Ogrenci ismi giriniz: ", newStudent->name, sizeof(newStudent->name));
                         newStudent->next = NULL;
 
                         addStudentToCourse(currentCourse, newStudent);
@@ -163,7 +222,7 @@ int main() {
                 }
 
                 if (currentCourse == NULL) {
-                    printf("ERROR:Böyle bir kurs bulunmamaktadır.Eğer kurs eklemek istiyorsanız menüden ekleyebilirsiniz.\n");
+                    printf("ERROR:Boyle bir kurs bulunmamaktadir.Eger kurs eklemek istiyorsaniz menuden ekleyebilirsiniz.\n");
                 }
 
                 break;
@@ -177,7 +236,7 @@ int main() {
                 while (currentCourse != NULL) {
                     if (strcmp(currentCourse->name, courseName) == 0) {
                         Teacher* newTeacher = (Teacher*)malloc(sizeof(Teacher));
-                        getUserInput("Kursun öğretmeninin ismini giriniz: ", newTeacher->name, sizeof(newTeacher->name));
+                        getUserInput("Kursun yardimci ogretmeninin ismini giriniz: ", newTeacher->name, sizeof(newTeacher->name));
                         newTeacher->next = NULL;
 
                         addTeacherToCourse(currentCourse, newTeacher);
@@ -187,7 +246,7 @@ int main() {
                 }
 
                 if (currentCourse == NULL) {
-                    printf("ERROR:Böyle bir kurs bulunmamaktadır.Eğer kurs eklemek istiyorsanız menüden ekleyebilirsiniz.\n");
+                    printf("ERROR:Boyle bir kurs bulunmamaktadir.Eger kurs eklemek istiyorsaniz menuden ekleyebilirsiniz.\n");
                 }
 
                 break;
@@ -196,10 +255,10 @@ int main() {
                 displayCourses(courseList);
                 break;
             case 0:
-                printf("Çıkış yapılıyor...\n");
+                printf("Cikis yapiliyor...\n");
                 break;
             default:
-                printf("Böyle bir seçenek bulunamamakta.Lütfen tekrar deneyiniz.\n");
+                printf("Boyle bir secenek bulunamamaktadir.Lutfen tekrar deneyiniz.\n");
         }
 
     } while (choice != 0);
