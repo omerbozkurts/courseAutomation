@@ -8,7 +8,7 @@
 
 // öğrenci structure
 typedef struct Student {
-    char name[50];
+    char name[50];        // dizi
     int studentID;
     struct Student* next;
 } Student;
@@ -25,14 +25,11 @@ typedef struct Course {
     int kapasite;
     int enrolled;
     char teacher[50];
-<<<<<<< Updated upstream
+
     Student* students; // öğrencilerin listesi
     Teacher* teachers; // öğretmenlerin listesi
-=======
-    Student* students; // öğrencilerin listesi "düzenleyip hallettik"
-    Teacher* teachers; // öğretmenlerin listesi "++"
->>>>>>> Stashed changes
-    struct Course* next;
+
+    struct Course* next;  // Stack
 } Course;
 
 // input string
@@ -64,7 +61,7 @@ int getUserInputInt(char* prompt) {
 
 
 // öğrenciyi kursa enrollamak/atamak
-void addStudentToCourse(Course* course, Student* student) {
+void addStudentToCourse(Course* course, Student* student) {   // linked list
     if (course->enrolled < course->kapasite) {
         student->studentID = course->enrolled + 1; // öğrenci kimlikleri randomize değil sıralı olarak verilir ( ilk öğrenci 1 numaralı ikinci öğrenci 2 numaralı vs. )
         student->next = course->students;
@@ -79,7 +76,7 @@ void addStudentToCourse(Course* course, Student* student) {
 
 
 // kursa yardımcı öğretmen enrollamak/atamak
-void addTeacherToCourse(Course* course, Teacher* teacher) {
+void addTeacherToCourse(Course* course, Teacher* teacher) {  // linked list
     // Kontrol eder++
     int teacherCount = 0;
     Teacher* currentTeacher = course->teachers;
