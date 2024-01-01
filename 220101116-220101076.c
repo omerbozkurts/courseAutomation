@@ -8,15 +8,15 @@
 
 // öğrenci structure
 typedef struct Student {
-    char name[50];        // dizi
+    char name[50];
     int studentID;
-    struct Student* next;
+    struct Student* next;    // linked list pointer
 } Student;
 
 // öğretmen structure
 typedef struct Teacher {
     char name[50];
-    struct Teacher* next;
+    struct Teacher* next;    // linked list pointer
 } Teacher;
 
 // açılıcak kursun structure
@@ -29,22 +29,22 @@ typedef struct Course {
     Student* students; // öğrencilerin listesi
     Teacher* teachers; // öğretmenlerin listesi
 
-    struct Course* next;  // Stack
+    struct Course* next;  // Linked list pointer
 } Course;
 
-// input string
+// Kullanıcıdan String giriş al
 void getUserInput(char* prompt, char* userInput, int maxLength) {
     printf("%s", prompt);
     fgets(userInput, maxLength, stdin);
 
     //yeni satır karakterini kaldırır
-    size_t length = strlen(userInput);
+    size_t length = strlen(userInput);   // kullanıcının girdiği metnin uzunluğunu hesaplayıp lenght'e atama
     if (length > 0 && userInput[length - 1] == '\n') {
         userInput[length - 1] = '\0';
     }
 }
 
-// input integer
+// Kullanıcıdan integer giriş al
 int getUserInputInt(char* prompt) {
     int value;
     char userInput[50];
@@ -62,7 +62,7 @@ int getUserInputInt(char* prompt) {
 
 // öğrenciyi kursa enrollamak/atamak
 void addStudentToCourse(Course* course, Student* student) {   // linked list
-    if (course->enrolled < course->kapasite) {
+    if (course->enrolled < course->kapasite) {                // doluluk kontrolü
         student->studentID = course->enrolled + 1; // öğrenci kimlikleri randomize değil sıralı olarak verilir ( ilk öğrenci 1 numaralı ikinci öğrenci 2 numaralı vs. )
         student->next = course->students;
         course->students = student;
@@ -77,7 +77,7 @@ void addStudentToCourse(Course* course, Student* student) {   // linked list
 
 // kursa yardımcı öğretmen enrollamak/atamak
 void addTeacherToCourse(Course* course, Teacher* teacher) {  // linked list
-    // Kontrol eder++
+    // Kontrol eder
     int teacherCount = 0;
     Teacher* currentTeacher = course->teachers;
     while (currentTeacher != NULL) {
@@ -106,7 +106,7 @@ Course* addCourse(Course* head, const char* name, int kapasite, const char* teac
         currentCourse = currentCourse->next;
     }
 
-    // yeni bir kurs eklemek/listede göstermek
+    // yeni bir kurs ekleme ve listede gösterme
     Course* newCourse = (Course*)malloc(sizeof(Course));
     strcpy(newCourse->name, name);
     newCourse->kapasite = kapasite;
@@ -182,7 +182,7 @@ int main() {
     char name[50];
     getUserInput("Kurs ismi giriniz: ", name, sizeof(name));
 
-    // aynı isimli kursun mevcut olup olmadığına bak
+    // kursun var olup olmadığını kontrol eder
     Course* currentCourse = courseList;
     while (currentCourse != NULL) {
         if (strcmp(currentCourse->name, name) == 0) {
@@ -209,7 +209,7 @@ int main() {
                 char courseName[50];
                 getUserInput("Kurs ismi giriniz: ", courseName, sizeof(courseName));
 
-                // kursun var olup olmadığını kontrol et "++" fixlendi
+                // kursun var olup olmadığını kontrol eder
                 Course* currentCourse = courseList;
                 while (currentCourse != NULL) {
                     if (strcmp(currentCourse->name, courseName) == 0) {
@@ -265,7 +265,7 @@ int main() {
 
     } while (choice != 0);
 
-    // free memory
+    // Belleği serbest bırakma işlemleri
     Course* currentCourse = courseList;
     while (currentCourse != NULL) {
         Student* currentStudent = currentCourse->students;
